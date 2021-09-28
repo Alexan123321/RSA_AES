@@ -1,6 +1,6 @@
 /**
 BY: Deyana Atanasova, Henrik Tambo Buhl & Alexander Stæhr Johansen
-DATE: 22-09-2021
+DATE: 22-09-2021 (Updated 28-09-2021)
 COURSE: Distributed Systems and Security
 DESCRIPTION: RSA en- and decryption template implementation.
 **/
