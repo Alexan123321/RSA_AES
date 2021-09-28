@@ -1,6 +1,7 @@
 package aesexample
 
 import (
+	"bytes"
 	"crypto/aes"
 	"crypto/cipher"
 	"crypto/rand"
@@ -21,23 +22,22 @@ func EncryptToFile(inputText, inputKey, filename string) {
 		fmt.Println(err)
 	}
 
-	/* Apply Galois Counter Mode operation with the AES cipher */
-	gcm, err := cipher.NewGCM(c)
-	if err != nil {
-		fmt.Println(err)
+	/* Allocate memory for the ciphertext and the block */
+	ciphertext := make([]byte, aes.BlockSize+len(text))
+	iv := ciphertext[:aes.BlockSize]
+
+	if _, err := io.ReadFull(rand.Reader, iv); err != nil {
+		panic(err)
 	}
 
-	/* Make a byte array of the size of the nonce of GCM */
-	nonce := make([]byte, gcm.NonceSize())
+	/* Apply CTR operation with the AES cipher and the block */
+	ctr := cipher.NewCTR(c, iv)
 
-	/* Fill the nonce with random data */
-	_, err = io.ReadFull(rand.Reader, nonce)
-	if err != nil {
-		fmt.Println(err)
-	}
+	/* Encrypt the text and store it in the ciphertext */
+	ctr.XORKeyStream(ciphertext[aes.BlockSize:], text)
 
 	/* Finally, the text is encrypted, and the text is written to the file */
-	err = ioutil.WriteFile(filename+".data", gcm.Seal(nonce, nonce, text, nil), 0777)
+	err = ioutil.WriteFile(filename+".data", ciphertext, 0777)
 	if err != nil {
 		fmt.Println(err)
 	}
@@ -45,12 +45,15 @@ func EncryptToFile(inputText, inputKey, filename string) {
 }
 
 /* Decrypt method */
-func DecryptToFile(inputKey, filename string) []byte {
+func DecryptFromFile(inputKey, filename string) []byte {
 	/* Read ciphertext from file */
 	ciphertext, err := ioutil.ReadFile(filename + ".data")
 	if err != nil {
 		fmt.Println(err)
 	}
+
+	/* Allocate block */
+	iv := ciphertext[:aes.BlockSize]
 
 	/* Create AES cipher from the key provided */
 	c, err := aes.NewCipher([]byte(inputKey))
@@ -58,23 +61,19 @@ func DecryptToFile(inputKey, filename string) []byte {
 		fmt.Println(err)
 	}
 
-	/* Apply Galois Counter Mode operation with the AES cipher */
-	gcm, err := cipher.NewGCM(c)
+	/* Apply CTR operation with the AES cipher */
+	ctr := cipher.NewCTR(c, iv)
 	if err != nil {
 		fmt.Println(err)
 	}
 
-	/* Compare size of nonce to size of GCM nonce */
-	nonceSize := gcm.NonceSize()
-	if len(ciphertext) < nonceSize {
-		fmt.Println(err)
-	}
+	/* Allocate memory for the plaintext */
+	plaintext := make([]byte, len(ciphertext))
 
-	/* Decrypt ciphertext and store as plaintext */
-	nonce, ciphertext := ciphertext[:nonceSize], ciphertext[nonceSize:]
-	plaintext, err := gcm.Open(nil, nonce, ciphertext, nil)
-	if err != nil {
-		fmt.Println(err)
-	}
+	/* Decrypt the ciphertext using the same procedure as for encryption */ //NOTE: only viable as it is CTR
+	ctr.XORKeyStream(plaintext, ciphertext[aes.BlockSize:])
+
+	/* Trim the decrypted plaintext to remove nil bytes */
+	plaintext = bytes.Trim(plaintext, "\x00")
 	return plaintext
 }
