@@ -24,11 +24,10 @@ type Key struct {
 }
 
 /* Key generator method */
-func KeyGen(k int, e int) (Key, Key) {
+func KeyGen(K *big.Int, e int) (Key, Key) {
 	/* Convert constants 1, E and K to big ints */
 	ONE := big.NewInt(1)
 	E := big.NewInt(int64(e))
-	K := big.NewInt(int64(k))
 
 	/* Determine bitlength of k */
 	bitLength := K.BitLen()
@@ -69,9 +68,7 @@ func KeyGen(k int, e int) (Key, Key) {
 }
 
 /* Encrypt method */
-func Encrypt(m int, publicKey Key) *big.Int {
-	/* Cast m to big int */
-	M := big.NewInt(int64(m))
+func Encrypt(M *big.Int, publicKey Key) *big.Int {
 	/* Generate ciphertext using the public key*/
 	c := new(big.Int).Exp(M, publicKey.E_or_d, publicKey.N)
 	return c
