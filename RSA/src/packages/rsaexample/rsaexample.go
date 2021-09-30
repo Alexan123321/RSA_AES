@@ -14,6 +14,8 @@ package rsaexample
 
 import (
 	"crypto/rand"
+	"crypto/sha256"
+	"fmt"
 	"math/big"
 )
 
@@ -75,10 +77,68 @@ func Encrypt(M *big.Int, publicKey Key) *big.Int {
 }
 
 /* Decrypt method */
-func Decrypt(c *big.Int, privateKey Key) string {
+func Decrypt(c *big.Int, privateKey Key) *big.Int {
 	/* Decrypt the message using the private key */
 	m := new(big.Int).Exp(c, privateKey.E_or_d, privateKey.N)
 	/* Cast m to string */
-	M := m.String()
-	return M
+	return m
+}
+
+/* Hash message */
+func HashMessage(m []byte) []byte {
+	hm := sha256.Sum256(m)
+	return hm[:]
+}
+
+/* Turn a byte array into an integer */
+func ByteArrayToInt(ba []byte) *big.Int {
+	i := new(big.Int)
+	i.SetBytes(ba)
+	return i
+}
+
+/* Hash message with SHA-256 and get integer representation of the hash */
+func HashAsInt(m []byte) *big.Int {
+	return ByteArrayToInt(HashMessage(m))
+}
+
+/* Generate RSA signature */
+func GenerateSignature(m *big.Int, publicKey Key) []byte {
+	fmt.Println("Message before encryption: " + m.String())
+
+	/* Hash message with SHA-256 and get integer representation of hash */
+	hm := HashAsInt(m.Bytes())
+	fmt.Println("Message hash: " + hm.String())
+
+	/* Encrypt the hashed message with the public key */
+	c := Encrypt(hm, publicKey)
+
+	/* Pad ciphertext with zeros */
+	cb := c.Bytes()
+	signatureSize := len(publicKey.N.Bytes())
+	if len(cb) < signatureSize {
+		padding := make([]byte, signatureSize-len(cb))
+		cb = append(padding, cb...)
+	}
+	return cb
+}
+
+/* Verify signature */
+func VerifySignature(m []byte, cb []byte, privateKey Key) bool {
+	if len(privateKey.N.Bytes()) != len(cb) { // they have the same length
+		return false
+	}
+
+	/* Convert signature to an integer */
+	s := ByteArrayToInt(cb)
+
+	/* Decrypt signature */
+	ds := Decrypt(s, privateKey)
+	fmt.Println("Message after decryption: " + ds.String())
+
+	/* Hash message with SHA-256 and get integer representation of hash */
+	hm := HashAsInt(m)
+
+	/* Compare the hashed message and the hash of the message from the signature */
+	return hm.Cmp(ds) == 0
 }

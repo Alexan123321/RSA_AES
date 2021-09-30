@@ -19,33 +19,32 @@ import (
 	"week_4/src/packages/rsaexample"
 )
 
-func main() {
-	/* Generate pseudo-random k */
+func GenerateRandomK() *big.Int {
 	max := new(big.Int)
 	max.Exp(big.NewInt(2), big.NewInt(130), nil).Sub(max, big.NewInt(1))
 	k, err := rand.Int(rand.Reader, max)
 	if err != nil {
 		fmt.Println(err)
 	}
+	return k
+}
 
-	e := 3 //CHANGE ME
+// TODO: get this to work - currently message before & encryption is different
+func main() {
+	/* Generate pseudo-random k (bit-length of the key)*/
+	k := GenerateRandomK()
+	e := 3
 
 	/* Generate public and private key, respectively */
 	publicKey, privateKey := rsaexample.KeyGen(k, e)
 
 	/* Generate random message */
-	m, err := rand.Int(rand.Reader, publicKey.N)
-	if err != nil {
-		fmt.Println(err)
-	}
+	m, _ := rand.Int(rand.Reader, publicKey.N)
 
-	/* Encrypt m with the public key */
-	c := rsaexample.Encrypt(m, publicKey)
+	/* Generate RSA signature */
+	s := rsaexample.GenerateSignature(m, publicKey)
 
-	/* Decrypt ciphertext with private key */
-	decrypted := rsaexample.Decrypt(c, privateKey)
-
-	/* Print message before encryption and after decryption */
-	fmt.Println("Message before encryption: " + m.String())
-	fmt.Println("Message after decryption: " + decrypted)
+	/* Verify RSA signature */
+	isTheSame := rsaexample.VerifySignature(m.Bytes(), s, privateKey)
+	println(isTheSame)
 }
