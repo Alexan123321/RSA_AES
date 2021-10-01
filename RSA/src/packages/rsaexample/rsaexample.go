@@ -80,7 +80,6 @@ func Encrypt(M *big.Int, publicKey Key) *big.Int {
 func Decrypt(c *big.Int, privateKey Key) *big.Int {
 	/* Decrypt the message using the private key */
 	m := new(big.Int).Exp(c, privateKey.E_or_d, privateKey.N)
-	/* Cast m to string */
 	return m
 }
 
@@ -91,54 +90,35 @@ func HashMessage(m []byte) []byte {
 }
 
 /* Turn a byte array into an integer */
-func ByteArrayToInt(ba []byte) *big.Int {
-	i := new(big.Int)
-	i.SetBytes(ba)
-	return i
-}
-
-/* Hash message with SHA-256 and get integer representation of the hash */
-func HashAsInt(m []byte) *big.Int {
-	return ByteArrayToInt(HashMessage(m))
+func ByteArrayToInt(inputBytes []byte) *big.Int {
+	return new(big.Int).SetBytes(inputBytes[:])
 }
 
 /* Generate RSA signature */
-func GenerateSignature(m *big.Int, publicKey Key) []byte {
-	fmt.Println("Message before encryption: " + m.String())
-
-	/* Hash message with SHA-256 and get integer representation of hash */
-	hm := HashAsInt(m.Bytes())
-	fmt.Println("Message hash: " + hm.String())
-
+func GenerateSignature(hashedMessage *big.Int, publicKey Key) *big.Int {
 	/* Encrypt the hashed message with the public key */
-	c := Encrypt(hm, publicKey)
+	ciphertext := Encrypt(hashedMessage, publicKey)
 
 	/* Pad ciphertext with zeros */
-	cb := c.Bytes()
-	signatureSize := len(publicKey.N.Bytes())
-	if len(cb) < signatureSize {
-		padding := make([]byte, signatureSize-len(cb))
-		cb = append(padding, cb...)
+	ciphertextInBytes := ciphertext.Bytes()
+	keyInBytes := publicKey.N.Bytes()
+	if len(ciphertextInBytes) < len(keyInBytes) {
+		padding := make([]byte, len(keyInBytes)-len(ciphertextInBytes))
+		ciphertextInBytes = append(padding, ciphertextInBytes...)
 	}
-	return cb
+
+	return new(big.Int).SetBytes(ciphertextInBytes)
 }
 
 /* Verify signature */
-func VerifySignature(m []byte, cb []byte, privateKey Key) bool {
-	if len(privateKey.N.Bytes()) != len(cb) { // they have the same length
-		return false
-	}
-
-	/* Convert signature to an integer */
-	s := ByteArrayToInt(cb)
-
+func VerifySignature(hashedMessage *big.Int, ciphertext *big.Int, privateKey Key) {
 	/* Decrypt signature */
-	ds := Decrypt(s, privateKey)
-	fmt.Println("Message after decryption: " + ds.String())
-
-	/* Hash message with SHA-256 and get integer representation of hash */
-	hm := HashAsInt(m)
+	decryptedHashedMessage := Decrypt(ciphertext, privateKey)
 
 	/* Compare the hashed message and the hash of the message from the signature */
-	return hm.Cmp(ds) == 0
+	if hashedMessage.Cmp(decryptedHashedMessage) == 0 {
+		fmt.Println("Message hash and decrypted message hash match.")
+	} else {
+		fmt.Println("Message hash and decrypted message hash do not match.")
+	}
 }
