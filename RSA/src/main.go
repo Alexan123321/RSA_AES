@@ -32,7 +32,7 @@ func GenerateRandomK() *big.Int {
 
 func main() {
 	fmt.Println("Generate and verify RSA signatures:")
-	TestVerification()
+	TestSigningAndVerification()
 	fmt.Println("------------------------------------")
 
 	fmt.Println("Measure hashing speed:")
@@ -50,7 +50,7 @@ func main() {
 	return
 }
 
-func TestVerification() {
+func TestSigningAndVerification() {
 	/* Generate pseudo-random k (bit-length of the key)*/
 	k := GenerateRandomK()
 	e := 3
