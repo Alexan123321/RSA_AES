@@ -85,10 +85,10 @@ func MeasureHashingSpeed() {
 	/* Measure hashing speed in bits per second */
 	start := time.Now()
 	rsaexample.HashMessage(data)
-	time.Sleep(time.Nanosecond)
+	time.Sleep(time.Nanosecond) //this is here because otherwise error reading the time ellapsed
 	elapsed := time.Since(start)
 
-	fmt.Printf("Hashed data (%vB) in %v ns\n", len(data), elapsed.Nanoseconds())
+	fmt.Printf("Hashed data (%vB) in %s \n", len(data), elapsed)
 	MeasureSpeed(data, elapsed)
 }
 
@@ -107,7 +107,7 @@ func MeasureSigningHashSpeed() {
 	elapsed := time.Since(start)
 
 	fmt.Printf("RSA key: %v bits\n", len(publicKey.N.Bytes())*8)
-	fmt.Printf("Signed message hash (%vB) in %v ns\n", hashedMessageSize, elapsed.Nanoseconds())
+	fmt.Printf("Signed message hash (%vB) in %s \n", hashedMessageSize, elapsed)
 	MeasureSpeed(hashedMessage.Bytes(), elapsed)
 }
 
@@ -125,7 +125,7 @@ func MeasureSigningMessageSpeed() {
 	elapsed := time.Since(start)
 
 	fmt.Printf("RSA key: %v bits\n", len(publicKey.N.Bytes())*8)
-	fmt.Printf("Signed message (%vB) in %v ns\n", dataSize, elapsed.Nanoseconds())
+	fmt.Printf("Signed message (%vB) in %s \n", dataSize, elapsed)
 	MeasureSpeed(data.Bytes(), elapsed)
 }
 
@@ -133,5 +133,5 @@ func MeasureSpeed(data []byte, elapsed time.Duration) {
 	/* Convert bytes per nanosecond to bits per second*/
 	bytesPerNanosecond := float64(len(data)) / float64(elapsed.Nanoseconds())
 	bitsPerSecond := bytesPerNanosecond * 8 * 1e9
-	fmt.Printf("Speed: %v bps\n", bitsPerSecond)
+	fmt.Printf("Speed: %v bps\n", int(bitsPerSecond))
 }
